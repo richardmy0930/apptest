@@ -1,0 +1,9 @@
+# 作業系統雜檔
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 編輯器暫存
+*.swp
+*~
+.vscode/
