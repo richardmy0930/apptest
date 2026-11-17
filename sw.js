@@ -1,7 +1,9 @@
 /* 童趣星球 Service Worker */
-/* v4：全部改「網路優先」—— 線上一律抓最新(HTML、音檔、圖示都是),抓不到才用離線快取。
-   這樣每次更新都會立刻生效,不會再卡在舊版;離線時仍可用之前存的內容。 */
-var CACHE = 'tongqu-v4';
+/* v5：混合策略，解決「操作頓頓的」問題。
+   - 網頁本體(HTML/導覽)：網路優先 → 更新仍會自動生效，不會卡舊版。
+   - 音檔/圖片/程式等靜態資源：快取優先 → 載過一次就存起來，之後點了立刻反應，不必每次連網。
+   靜態資源若內容改了(同檔名)，升 CACHE 版本即可強制更新。 */
+var CACHE = 'tongqu-v5';
 var SHELL = [
   './',
   './index.html',
@@ -34,26 +36,49 @@ self.addEventListener('activate', function (e) {
   );
 });
 
-/* 取用策略:同源 GET 一律「網路優先」。
-   連得到網路 → 回最新,並順手更新快取;
-   連不到(離線)→ 回快取;導覽類再退回首頁。 */
+/* 取用策略(混合):
+   - 導覽/HTML：網路優先(回最新網頁，離線退回快取/首頁) → 更新即時生效。
+   - 其他靜態資源(音檔/圖片/JS/CSS)：快取優先(命中就秒回，沒有才連網並存起來) → 操作順暢。 */
+function isHtml(req) {
+  if (req.mode === 'navigate') return true;
+  var a = req.headers.get('accept') || '';
+  return a.indexOf('text/html') !== -1;
+}
+
 self.addEventListener('fetch', function (e) {
   var req = e.request;
   if (req.method !== 'GET') return;
   var url = new URL(req.url);
   if (url.origin !== self.location.origin) return; /* 跨網域(氣象 API、字型等)交給瀏覽器 */
 
+  if (isHtml(req)) {
+    /* 網頁本體：網路優先 */
+    e.respondWith(
+      fetch(req).then(function (res) {
+        if (res && res.status === 200 && res.type === 'basic') {
+          var copy = res.clone();
+          caches.open(CACHE).then(function (c) { c.put(req, copy); });
+        }
+        return res;
+      }).catch(function () {
+        return caches.match(req).then(function (hit) {
+          return hit || caches.match('./index.html');
+        });
+      })
+    );
+    return;
+  }
+
+  /* 靜態資源：快取優先 */
   e.respondWith(
-    fetch(req).then(function (res) {
-      if (res && res.status === 200 && res.type === 'basic') {
-        var copy = res.clone();
-        caches.open(CACHE).then(function (c) { c.put(req, copy); });
-      }
-      return res;
-    }).catch(function () {
-      return caches.match(req).then(function (hit) {
-        if (hit) return hit;
-        if (req.mode === 'navigate') return caches.match('./index.html');
+    caches.match(req).then(function (hit) {
+      if (hit) return hit;
+      return fetch(req).then(function (res) {
+        if (res && res.status === 200 && res.type === 'basic') {
+          var copy = res.clone();
+          caches.open(CACHE).then(function (c) { c.put(req, copy); });
+        }
+        return res;
       });
     })
   );
