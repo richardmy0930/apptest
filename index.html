@@ -604,8 +604,9 @@
     try{ stopSpeak(); }catch(e){}
     stopUi();
     if(lrnAudio){ try{ lrnAudio.pause(); }catch(e){} }
-    if(name!=='home' && uiClips[name]){ playUiClip(uiClips[name], function(){ go(name); }); }
-    else { go(name); }
+    /* 立刻切畫面，不等語音唸完（原本會卡住等整段播完或最多 3 秒）。
+       go() 內部已會播各星球的提示音，操作更順。 */
+    go(name);
   }
   document.addEventListener('click', function(e){
     var t = e.target.closest('[data-go]'); if(!t) return;
