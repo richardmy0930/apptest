@@ -594,6 +594,11 @@
       window.goatcounter.count({ path: path, title: title || path, event: true });
     }}catch(e){}
   }
+  /* 給後台統計用的中文名稱對照，讓 GoatCounter 一眼看懂是哪個星球/項目 */
+  var WORLD_NAMES = { learn:'學習星球', story:'故事星球', draw:'畫畫星球', game:'遊樂星球' };
+  var LEARN_NAMES = { count:'數數看', add:'加法', sub:'減法', compare:'比大小', color:'認顏色',
+    shape:'認形狀', emotion:'認情緒', weather:'認天氣', multiply:'九九乘法', zhuyin:'注音',
+    abc:'念英文字', speak:'英文發音', write:'寫寫看' };
   function go(name){
     for(var k in screens){ document.getElementById(screens[k]).hidden = (k!==name); }
     navBtns.forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-go')===name); });
@@ -610,7 +615,7 @@
     try{ stopSpeak(); }catch(e){}
     stopUi();
     if(lrnAudio){ try{ lrnAudio.pause(); }catch(e){} }
-    if(name!=='home') gcEvent('go-'+name, name+' 星球');
+    if(name!=='home') gcEvent('go-'+name, WORLD_NAMES[name] || (name+' 星球'));
     /* 立刻切畫面，不等語音唸完（原本會卡住等整段播完或最多 3 秒）。
        go() 內部已會播各星球的提示音，操作更順。 */
     go(name);
@@ -847,7 +852,7 @@
     dotNodes.forEach(function(d,i){ d.classList.toggle('on', i===page); });
     prevB.disabled = page===0; nextB.textContent = page===pg.length-1 ? '讀完囉 ⭐' : '下一頁 →'; }
   function openStory(idx){ curStory=idx; page=0; storyShelf.hidden=true; stageEl.hidden=false; buildDots(); renderStory(); speakCurrent();
-    try{ gcEvent('story-'+idx, '故事:'+(stories[idx]&&stories[idx].title||idx)); }catch(e){} }
+    try{ gcEvent('story-'+idx, '故事星球｜'+(stories[idx]&&stories[idx].title||idx)); }catch(e){} }
   nextB.addEventListener('click', function(){ var pg=stories[curStory].pages;
     if(page<pg.length-1){ page++; renderStory(); speakCurrent(); }
     else { addStars(5); showToast('故事聽完了！+5 ⭐'); showStoryShelf(); } });
@@ -883,7 +888,7 @@
   var learnMode=null, answer=0, locked=false;
   function showLearnHub(){ stopMul(); stopZhAuto(); stopLtAuto(); spStop(); stopAnim(); learnMode=null; learnPlay.hidden=true; learnHub.hidden=false; }
   function startLearn(mode){ learnMode=mode; learnHub.hidden=true; learnPlay.hidden=false;
-    gcEvent('learn-'+mode, '學習:'+mode);
+    gcEvent('learn-'+mode, '學習星球｜'+(LEARN_NAMES[mode]||mode));
     if(mode==='zhuyin'){ showZhuyinHome(); }
     else if(mode==='abc'){ showLetterGroups(); }
     else if(mode==='multiply'){ showMulPicker(); }
