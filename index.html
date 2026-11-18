@@ -1722,13 +1722,27 @@
         try{ localStorage.setItem('wxOn','1'); }catch(e){}
       });
     }
+    /* 用「網路位置(IP)」估計所在城市:免權限、免 GPS、任何手機都能用。
+       只拿到城市等級的經緯度,對看天氣已足夠(主站失敗再換備援站)。 */
+    function ipLocate(){
+      jget('https://ipwho.is/').then(function(j){
+        if(j && j.success!==false && j.latitude!=null){ loadWx(j.latitude, j.longitude); return; }
+        jget('https://ipapi.co/json/').then(function(k){
+          if(k && k.latitude!=null){ loadWx(k.latitude, k.longitude); }
+          else { fail('📍 看天氣失敗，點我再試一次'); }
+        });
+      });
+    }
     function go2(){
-      if(!navigator.geolocation){ fail('📍 這台裝置不支援定位'); return; }
       setLoading();
+      if(!navigator.geolocation){ ipLocate(); return; }   /* 不支援定位 → 直接用網路位置 */
+      var done=false;
+      /* 保險:萬一定位卡住沒回呼,7 秒後自動改用網路位置 */
+      var guard=setTimeout(function(){ if(!done){ done=true; ipLocate(); } }, 7000);
       navigator.geolocation.getCurrentPosition(
-        function(p){ loadWx(p.coords.latitude, p.coords.longitude); },
-        function(){ fail('📍 沒有定位權限，點我再試一次'); },
-        { enableHighAccuracy:false, timeout:10000, maximumAge:600000 }
+        function(p){ if(done)return; done=true; clearTimeout(guard); loadWx(p.coords.latitude, p.coords.longitude); },
+        function(){ if(done)return; done=true; clearTimeout(guard); ipLocate(); },  /* 定位失敗/逾時/沒權限 → 改用網路位置 */
+        { enableHighAccuracy:false, timeout:6000, maximumAge:600000 }
       );
     }
     wxBtn.addEventListener('click', go2);
