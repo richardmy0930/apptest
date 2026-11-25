@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0F766E" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="拍拍健康記" />
+  <title>拍拍健康記 — 銀髮健康儀器拍照紀錄</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+  <link rel="apple-touch-icon" href="./icon.svg" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Header -->
+    <header class="top-bar">
+      <div class="top-bar-row">
+        <div>
+          <h1 class="brand-title">📷 拍拍健康記</h1>
+          <p class="brand-sub" id="headerSub">免藍牙 · 拍螢幕自動分類紀錄</p>
+        </div>
+        <button type="button" class="mode-badge" id="modeBadge" title="檢視 AI 連線狀態">⏳ 檢查 AI 中</button>
+      </div>
+    </header>
+
+    <!-- Android Chrome Install to Home Screen Banner -->
+    <div class="install-banner hidden" id="installBanner">
+      <span>📲 安裝到手機桌面，點開就像真 App！</span>
+      <button type="button" class="btn-install-small" id="btnInstallPwa">加入桌面</button>
+    </div>
+
+    <!-- iOS Safari Add to Home Screen Tip -->
+    <div class="install-banner hidden" id="iosInstallBanner">
+      <span>🍎 iPhone 可點底部「分享 ⬆️」→「加入主畫面」變桌面 App</span>
+      <button type="button" class="btn-install-small" id="btnCloseIosTip" style="background:#64748B;">知道了</button>
+    </div>
+
+    <!-- Hidden File Inputs for Mobile Camera & Gallery -->
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden" />
+    <input type="file" id="galleryInput" accept="image/*" class="hidden" />
+
+    <!-- Main Views -->
+    <main class="main-content">
+
+      <!-- VIEW 1: HOME -->
+      <section class="view-section active" id="view-home">
+        <div class="hero-capture-card">
+          <button type="button" class="btn-giant-camera" id="btnGiantCamera">
+            <span class="cam-icon">📷</span>
+            <span>拍儀器螢幕自動記</span>
+          </button>
+          <p class="hero-sub-hint">血壓計 · 血糖機 · 血氧機 · 體重計 · 體溫槍，不用先選類別！</p>
+          <div class="quick-action-row">
+            <button type="button" class="btn-secondary-action" id="btnGalleryPick">🖼️ 從相簿選照片</button>
+            <button type="button" class="btn-secondary-action" id="btnManualEntry">✏️ 手動輸入</button>
+          </div>
+          <div style="margin-top:10px;">
+            <button type="button" class="btn-secondary-action demo-btn" id="btnDemoScan" style="width:100%;">
+              🧪 模擬實拍體驗（免準備儀器立刻試玩）
+            </button>
+          </div>
+        </div>
+
+        <div class="section-header">
+          <h2 class="section-title">今日健康總覽</h2>
+          <span class="section-date" id="todayDateText"></span>
+        </div>
+        <div class="today-grid" id="todayGrid"></div>
+
+        <div class="section-header">
+          <h2 class="section-title">最近量測紀錄</h2>
+        </div>
+        <div class="record-list" id="homeRecentList"></div>
+
+        <div class="disclaimer-box">
+          ⚠️ <strong>提醒：</strong>本網站為日常健康數據記錄與影像轉錄輔助工具，非醫療器材，不提供醫療診斷或用藥建議。AI 辨識後請務必核對螢幕數字再存檔；如身體不適請儘速就醫。
+        </div>
+      </section>
+
+      <!-- VIEW 2: HISTORY & TRENDS -->
+      <section class="view-section" id="view-history">
+        <div class="filter-bar" id="historyFilterBar">
+          <button type="button" class="filter-chip" data-filter="all">全部</button>
+          <button type="button" class="filter-chip active" data-filter="blood_pressure">❤️ 血壓</button>
+          <button type="button" class="filter-chip" data-filter="blood_glucose">🩸 血糖</button>
+          <button type="button" class="filter-chip" data-filter="oximeter">🫁 血氧</button>
+          <button type="button" class="filter-chip" data-filter="weight">⚖️ 體重</button>
+          <button type="button" class="filter-chip" data-filter="temperature">🌡️ 體溫</button>
+        </div>
+
+        <div class="card-box" id="historyStatsCard">
+          <h3 class="section-title" id="historyChartTitle" style="margin-bottom:12px;">趨勢與統計</h3>
+          <div class="stats-row">
+            <div class="stat-box">
+              <div class="stat-label">平均值</div>
+              <div class="stat-num" id="statAvg">-</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">最高值</div>
+              <div class="stat-num" id="statMax">-</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">最低值</div>
+              <div class="stat-num" id="statMin">-</div>
+            </div>
+          </div>
+          <div class="chart-wrap" id="trendChartWrap"></div>
+        </div>
+
+        <div class="section-header">
+          <h2 class="section-title">完整歷史明細（點縮圖可看原照）</h2>
+        </div>
+        <div class="record-list" id="historyRecordList"></div>
+      </section>
+
+      <!-- VIEW 3: DOCTOR REPORT & LINE SHARE -->
+      <section class="view-section" id="view-doctor">
+        <div class="doctor-banner">
+          👨‍⚕️ <strong>門診給醫生看模式</strong><br />
+          <span id="doctorSummaryInfo" style="font-weight:600;font-size:0.9em;"></span>
+        </div>
+
+        <div class="share-actions">
+          <button type="button" class="btn-line-share" id="btnShareLineCard">💬 傳健康圖卡到 LINE</button>
+          <button type="button" class="btn-copy-share" id="btnCopyLineText">📋 複製文字摘要</button>
+        </div>
+
+        <div class="card-box">
+          <h3 class="section-title" style="margin-bottom:12px;">近 14 天整合紀錄表</h3>
+          <div class="doctor-table-wrap">
+            <table class="doctor-table">
+              <thead>
+                <tr>
+                  <th>時間</th>
+                  <th>項目</th>
+                  <th>數值</th>
+                  <th>狀態</th>
+                </tr>
+              </thead>
+              <tbody id="doctorTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 4: SETTINGS -->
+      <section class="view-section" id="view-settings">
+        <div class="card-box">
+          <h2 class="section-title" style="margin-bottom:14px;">⚙️ 個人化設定</h2>
+
+          <!-- Cloud Zero-Key Status Banner -->
+          <div id="cloudStatusBanner" class="ai-status-box" style="margin-bottom:16px;">
+            <div id="cloudStatusText" style="font-weight:800;">⏳ 正在檢查雲端 AI 辨識服務...</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="inputElderName">長輩稱呼（用於語音播報與 LINE 圖卡）</label>
+            <input type="text" id="inputElderName" class="text-input" placeholder="例如：王阿公、陳媽媽" />
+          </div>
+
+          <div class="toggle-row">
+            <div>
+              <div class="form-label" style="margin:0;">🔊 拍完自動語音唸出數字</div>
+              <div class="form-help" style="margin:2px 0 0;">用中文朗讀辨識結果，減少老花誤看</div>
+            </div>
+            <input type="checkbox" id="chkVoiceEnabled" style="width:28px;height:28px;" />
+          </div>
+
+          <div class="form-group" style="margin-top:12px;">
+            <label class="form-label" for="selectVoiceRate">語音播報速度</label>
+            <select id="selectVoiceRate" class="select-input">
+              <option value="0.75">較慢（適合高齡長輩）</option>
+              <option value="0.88">適中偏慢（預設推薦）</option>
+              <option value="1.0">一般語速</option>
+            </select>
+          </div>
+
+          <div class="toggle-row">
+            <div>
+              <div class="form-label" style="margin:0;">🔎 超大字體模式</div>
+              <div class="form-help" style="margin:2px 0 0;">進一步放大按鈕與數字顯示</div>
+            </div>
+            <input type="checkbox" id="chkFontXL" style="width:28px;height:28px;" />
+          </div>
+
+          <!-- Advanced Personal Key (collapsed when cloud zero-key is active) -->
+          <details id="advancedKeySection" style="margin-top:16px;padding:12px;background:#F8FAFC;border:1.5px solid #E2E8F0;border-radius:14px;">
+            <summary style="font-weight:800;cursor:pointer;color:#334155;">🔧 進階：辨識模型與個人 API Key（一般使用者免設定）</summary>
+            <div style="margin-top:14px;">
+              <div class="form-group">
+                <label class="form-label" for="selectGeminiModel">辨識模型</label>
+                <select id="selectGeminiModel" class="select-input">
+                  <option value="auto">自動選擇最順暢模型（強烈推薦・自動避開塞車）</option>
+                  <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite（極速低塞車）</option>
+                  <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
+                  <option value="gemini-3.8-pro">Gemini 3.8 Pro（高精準模式）</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" for="inputApiKey">個人 Gemini API Key（僅在無雲端後端時使用）</label>
+                <input type="password" id="inputApiKey" class="text-input" placeholder="貼上 AIza... 開頭的免費 API Key" autocomplete="off" />
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
+                  <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" class="btn-secondary-action" style="text-decoration:none;">🔗 免費申請 Key</a>
+                  <button type="button" id="btnTestApiKey" class="btn-secondary-action demo-btn">🧪 測試 Key 連線</button>
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <div style="margin-top:18px;">
+            <button type="button" class="btn-primary-full" id="btnSaveSettings">💾 儲存設定</button>
+          </div>
+        </div>
+
+        <div class="card-box">
+          <h2 class="section-title" style="margin-bottom:10px;">📁 資料管理與隱私</h2>
+          <p class="form-help" style="margin-top:0;">所有健康紀錄與儀器原照僅儲存在您自己的手機瀏覽器內，免註冊登入、不會上傳保存您的個人健康紀錄。</p>
+          <button type="button" class="btn-outline-full" id="btnExportCsv">📊 匯出 Excel / CSV 備份檔</button>
+          <button type="button" class="btn-outline-full" id="btnClearSamples">🧹 僅清除預設範例資料</button>
+          <button type="button" class="btn-danger-full" id="btnClearAll">🗑️ 清空全部紀錄</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav" aria-label="主導覽列">
+      <button type="button" class="nav-btn active" data-view="home">
+        <span class="nav-ico">🏠</span>
+        <span>首頁</span>
+      </button>
+      <button type="button" class="nav-btn" data-view="history">
+        <span class="nav-ico">📈</span>
+        <span>趨勢紀錄</span>
+      </button>
+      <button type="button" class="nav-btn" data-view="doctor">
+        <span class="nav-ico">👨‍⚕️</span>
+        <span>給醫生看</span>
+      </button>
+      <button type="button" class="nav-btn" data-view="settings">
+        <span class="nav-ico">⚙️</span>
+        <span>設定</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- MODAL 1: SCAN & CONFIRM -->
+  <div class="modal-backdrop" id="scanModal">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h2 class="modal-title" id="scanModalTitle">AI 辨識確認</h2>
+        <button type="button" class="btn-close-modal" data-close-modal="scanModal">✕</button>
+      </div>
+
+      <div id="scanLoadingBox" class="loading-box hidden">
+        <div class="spinner"></div>
+        <div id="scanLoadingText" style="font-size:1.1em;font-weight:800;">正在讀取儀器螢幕...</div>
+      </div>
+
+      <div id="scanConfirmBox" class="hidden">
+        <div class="preview-img-box" id="scanPreviewBox">
+          <img id="scanPreviewImg" alt="儀器螢幕照片預覽" />
+          <button type="button" class="btn-rotate-photo" id="btnRotatePreview">↻ 轉正</button>
+        </div>
+
+        <div class="ai-status-box" id="aiStatusBox">
+          <div id="aiStatusTitle" style="font-weight:800;font-size:0.95em;line-height:1.45;">✅ AI 已自動分類並讀出數值</div>
+          <div class="ai-status-actions">
+            <button type="button" class="btn-speak" id="btnSpeakAgain">🔊 唸給我聽</button>
+            <button type="button" id="btnQuickSetKey" class="btn-quick-key hidden">🔑 前往設定金鑰</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="confirmDeviceSelect">自動辨識儀器種類（可手動切換）</label>
+          <select id="confirmDeviceSelect" class="select-input">
+            <option value="blood_pressure">❤️ 血壓計（收縮壓 / 舒張壓 / 心跳）</option>
+            <option value="blood_glucose">🩸 血糖機（mg/dL）</option>
+            <option value="oximeter">🫁 血氧心律計（SpO2 / 心律）</option>
+            <option value="weight">⚖️ 體重計（公斤 / 體脂）</option>
+            <option value="temperature">🌡️ 額溫／耳溫槍（°C）</option>
+          </select>
+        </div>
+
+        <div class="number-editor-grid" id="draftNumberGrid"></div>
+
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" for="confirmNoteInput">備註（選填，例如：親戚家血壓計、剛散步完）</label>
+          <input type="text" id="confirmNoteInput" class="text-input" placeholder="例如：早餐前、女兒家量測" />
+        </div>
+
+        <div class="confirm-action-row">
+          <button type="button" class="btn-retake" id="btnRetakePhoto">🔄 重拍</button>
+          <button type="button" class="btn-confirm-save" id="btnConfirmSave">✅ 確認存檔</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: DEMO SIMULATED METER PICKER -->
+  <div class="modal-backdrop" id="demoModal">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h2 class="modal-title">🧪 模擬實拍體驗</h2>
+        <button type="button" class="btn-close-modal" data-close-modal="demoModal">✕</button>
+      </div>
+      <p style="margin:0 0 12px;color:#4B5563;font-weight:600;">
+        選擇一台模擬健康儀器，體驗「拍照 → 自動分類 → 語音唸出 → 核對存檔」完整流程：
+      </p>
+      <div class="demo-device-grid">
+        <button type="button" class="demo-device-btn" data-demo-device="blood_pressure">
+          <span class="ico">❤️</span>
+          <span>模擬拍血壓計</span>
+        </button>
+        <button type="button" class="demo-device-btn" data-demo-device="blood_glucose">
+          <span class="ico">🩸</span>
+          <span>模擬拍血糖機</span>
+        </button>
+        <button type="button" class="demo-device-btn" data-demo-device="oximeter">
+          <span class="ico">🫁</span>
+          <span>模擬拍血氧機</span>
+        </button>
+        <button type="button" class="demo-device-btn" data-demo-device="weight">
+          <span class="ico">⚖️</span>
+          <span>模擬拍體重計</span>
+        </button>
+        <button type="button" class="demo-device-btn" data-demo-device="temperature" style="grid-column:span 2;">
+          <span class="ico">🌡️</span>
+          <span>模擬拍額溫／耳溫槍</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: ORIGINAL PHOTO VIEWER -->
+  <div class="modal-backdrop" id="photoModal">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h2 class="modal-title">📷 儀器原始照片存證</h2>
+        <button type="button" class="btn-close-modal" data-close-modal="photoModal">✕</button>
+      </div>
+      <div class="preview-img-box" style="max-height:360px;">
+        <img id="photoModalImg" style="max-height:360px;" alt="儀器原始照片" />
+      </div>
+      <p id="photoModalCaption" style="text-align:center;font-weight:800;font-size:1.05em;margin:8px 0 0;"></p>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toastEl"></div>
+
+  <script src="./js/storage.js"></script>
+  <script src="./js/speech.js"></script>
+  <script src="./js/ai-vision.js"></script>
+  <script src="./js/chart-and-share.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>

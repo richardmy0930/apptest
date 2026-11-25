@@ -1,0 +1,21 @@
+{
+  "name": "拍拍健康記 — 銀髮健康儀器拍照紀錄",
+  "short_name": "拍拍健康記",
+  "description": "專為銀髮族設計：拍一下血壓計、血糖機、血氧機、體重計螢幕，AI 自動分類辨識並語音確認，免藍牙、免登入整合每日健康紀錄。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F5F7F4",
+  "theme_color": "#0F766E",
+  "lang": "zh-TW",
+  "categories": ["health", "medical", "lifestyle"],
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
